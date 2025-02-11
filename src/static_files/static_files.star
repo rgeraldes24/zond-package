@@ -32,8 +32,8 @@ FORKY_CONFIG_TEMPLATE_FILEPATH = STATIC_FILES_DIRPATH + "/forky-config/config.ya
 TRACOOR_CONFIG_TEMPLATE_FILEPATH = (
     STATIC_FILES_DIRPATH + "/tracoor-config/config.yaml.tmpl"
 )
-FULL_BEACONCHAIN_CONFIG_TEMPLATE_FILEPATH = (
-    STATIC_FILES_DIRPATH + "/full-beaconchain-config/config.yaml.tmpl"
+EXPLORER_CONFIG_TEMPLATE_FILEPATH = (
+    STATIC_FILES_DIRPATH + "/explorer-config/config.yaml.tmpl"
 )
 
 # assertoor config

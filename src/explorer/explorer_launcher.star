@@ -2,7 +2,7 @@ shared_utils = import_module("../shared_utils/shared_utils.star")
 postgres = import_module("github.com/kurtosis-tech/postgres-package/main.star")
 redis = import_module("github.com/kurtosis-tech/redis-package/main.star")
 constants = import_module("../package_io/constants.star")
-IMAGE_NAME = "gobitfly/eth2-beaconchain-explorer:latest"
+IMAGE_NAME = "theqrl/zond-beaconchain-explorer:latest"
 
 POSTGRES_PORT_ID = "postgres"
 POSTGRES_PORT_NUMBER = 5432
@@ -16,7 +16,7 @@ REDIS_PORT_NUMBER = 6379
 FRONTEND_PORT_NUMBER = 8080
 LITTLE_BIGTABLE_PORT_NUMBER = 9000
 
-FULL_BEACONCHAIN_CONFIG_FILENAME = "beaconchain-config.yml"
+EXPLORER_CONFIG_FILENAME = "explorer-config.yml"
 
 # The min/max CPU/memory that postgres can use
 POSTGRES_MIN_CPU = 10
@@ -79,7 +79,7 @@ FRONTEND_MIN_MEMORY = 512
 FRONTEND_MAX_MEMORY = 2048
 
 
-def launch_full_beacon(
+def launch_explorer(
     plan,
     config_template,
     el_cl_data_files_artifact_uuid,
@@ -93,7 +93,7 @@ def launch_full_beacon(
     node_selectors = global_node_selectors
     postgres_output = postgres.run(
         plan,
-        service_name="beaconchain-postgres",
+        service_name="explorer-postgres",
         image="postgres:15.2-alpine",
         user=POSTGRES_USER,
         password=POSTGRES_PASSWORD,
@@ -107,7 +107,7 @@ def launch_full_beacon(
     )
     redis_output = redis.run(
         plan,
-        service_name="beaconchain-redis",
+        service_name="explorer-redis",
         image="redis:7",
         min_cpu=REDIS_MIN_CPU,
         max_cpu=REDIS_MAX_CPU,
@@ -117,7 +117,7 @@ def launch_full_beacon(
     )
     # TODO perhaps create a new service for the littlebigtable
     little_bigtable = plan.add_service(
-        name="beaconchain-littlebigtable",
+        name="explorer-littlebigtable",
         config=get_little_bigtable_config(
             node_selectors, port_publisher, additional_service_index
         ),
@@ -146,11 +146,11 @@ def launch_full_beacon(
     )
     template_and_data_by_rel_dest_filepath = {}
     template_and_data_by_rel_dest_filepath[
-        FULL_BEACONCHAIN_CONFIG_FILENAME
+        EXPLORER_CONFIG_FILENAME
     ] = template_and_data
 
     config_files_artifact_name = plan.render_templates(
-        template_and_data_by_rel_dest_filepath, "beaconchain-config.yml"
+        template_and_data_by_rel_dest_filepath, "explorer-config.yml"
     )
 
     files = {
@@ -160,7 +160,7 @@ def launch_full_beacon(
 
     # Initialize the db schema
     initdbschema = plan.add_service(
-        name="beaconchain-schema-initializer",
+        name="explorer-schema-initializer",
         config=ServiceConfig(
             image=IMAGE_NAME,
             files=files,
@@ -181,7 +181,7 @@ def launch_full_beacon(
             [
                 "./misc",
                 "-config",
-                "/app/config/beaconchain-config.yml",
+                "/app/config/explorer-config.yml",
                 "-command",
                 "applyDbSchema",
             ]
@@ -197,7 +197,7 @@ def launch_full_beacon(
             [
                 "./misc",
                 "-config",
-                "/app/config/beaconchain-config.yml",
+                "/app/config/explorer-config.yml",
                 "-command",
                 "initBigtableSchema",
             ]
@@ -206,14 +206,14 @@ def launch_full_beacon(
 
     # Start the indexer
     indexer = plan.add_service(
-        name="beaconchain-indexer",
+        name="explorer-indexer",
         config=ServiceConfig(
             image=IMAGE_NAME,
             files=files,
             entrypoint=["./explorer"],
             cmd=[
                 "-config",
-                "/app/config/beaconchain-config.yml",
+                "/app/config/explorer-config.yml",
             ],
             env_vars={
                 "INDEXER_ENABLED": "TRUE",
@@ -227,14 +227,14 @@ def launch_full_beacon(
     )
     # Start the eth1indexer
     eth1indexer = plan.add_service(
-        name="beaconchain-eth1indexer",
+        name="explorer-eth1indexer",
         config=ServiceConfig(
             image=IMAGE_NAME,
             files=files,
             entrypoint=["./eth1indexer"],
             cmd=[
                 "-config",
-                "/app/config/beaconchain-config.yml",
+                "/app/config/explorer-config.yml",
                 "-blocks.concurrency",
                 "1",
                 "-blocks.tracemode",
@@ -252,14 +252,14 @@ def launch_full_beacon(
     )
 
     rewardsexporter = plan.add_service(
-        name="beaconchain-rewardsexporter",
+        name="explorer-rewardsexporter",
         config=ServiceConfig(
             image=IMAGE_NAME,
             files=files,
             entrypoint=["./rewards-exporter"],
             cmd=[
                 "-config",
-                "/app/config/beaconchain-config.yml",
+                "/app/config/explorer-config.yml",
             ],
             min_cpu=REWARDSEXPORTER_MIN_CPU,
             max_cpu=REWARDSEXPORTER_MAX_CPU,
@@ -270,14 +270,14 @@ def launch_full_beacon(
     )
 
     statistics = plan.add_service(
-        name="beaconchain-statistics",
+        name="explorer-statistics",
         config=ServiceConfig(
             image=IMAGE_NAME,
             files=files,
             entrypoint=["./statistics"],
             cmd=[
                 "-config",
-                "/app/config/beaconchain-config.yml",
+                "/app/config/explorer-config.yml",
                 "-charts.enabled",
                 "-graffiti.enabled",
                 "-validators.enabled",
@@ -291,14 +291,14 @@ def launch_full_beacon(
     )
 
     fdu = plan.add_service(
-        name="beaconchain-fdu",
+        name="explorer-fdu",
         config=ServiceConfig(
             image=IMAGE_NAME,
             files=files,
             entrypoint=["./frontend-data-updater"],
             cmd=[
                 "-config",
-                "/app/config/beaconchain-config.yml",
+                "/app/config/explorer-config.yml",
             ],
             min_cpu=FDU_MIN_CPU,
             max_cpu=FDU_MAX_CPU,
@@ -309,7 +309,7 @@ def launch_full_beacon(
     )
 
     frontend = plan.add_service(
-        name="beaconchain-frontend",
+        name="explorer-frontend",
         config=get_frontend_config(
             files, node_selectors, port_publisher, additional_service_index
         ),
@@ -356,7 +356,7 @@ def get_frontend_config(
         entrypoint=["./explorer"],
         cmd=[
             "-config",
-            "/app/config/beaconchain-config.yml",
+            "/app/config/explorer-config.yml",
         ],
         env_vars={
             "FRONTEND_ENABLED": "TRUE",

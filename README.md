@@ -572,7 +572,7 @@ additional_services:
   - blockscout
   - beacon_metrics_gazer
   - dora
-  - full_beaconchain_explorer
+  - explorer
   - prometheus_grafana
   - dugtrio
   - blutgang

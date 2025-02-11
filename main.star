@@ -24,8 +24,8 @@ blutgang = import_module("./src/blutgang/blutgang_launcher.star")
 forky = import_module("./src/forky/forky_launcher.star")
 tracoor = import_module("./src/tracoor/tracoor_launcher.star")
 apache = import_module("./src/apache/apache_launcher.star")
-full_beaconchain_explorer = import_module(
-    "./src/full_beaconchain/full_beaconchain_launcher.star"
+explorer = import_module(
+    "./src/explorer/explorer_launcher.star"
 )
 blockscout = import_module("./src/blockscout/blockscout_launcher.star")
 prometheus = import_module("./src/prometheus/prometheus_launcher.star")
@@ -594,14 +594,14 @@ def run(plan, args={}):
                 args_with_right_defaults.docker_cache_params,
             )
             plan.print("Successfully launched apache")
-        elif additional_service == "full_beaconchain_explorer":
-            plan.print("Launching full-beaconchain-explorer")
-            full_beaconchain_explorer_config_template = read_file(
-                static_files.FULL_BEACONCHAIN_CONFIG_TEMPLATE_FILEPATH
+        elif additional_service == "explorer":
+            plan.print("Launching explorer")
+            explorer_config_template = read_file(
+                static_files.EXPLORER_CONFIG_TEMPLATE_FILEPATH
             )
-            full_beaconchain_explorer.launch_full_beacon(
+            explorer.launch_explorer(
                 plan,
-                full_beaconchain_explorer_config_template,
+                explorer_config_template,
                 el_cl_data_files_artifact_uuid,
                 all_cl_contexts,
                 all_el_contexts,
@@ -610,7 +610,7 @@ def run(plan, args={}):
                 args_with_right_defaults.port_publisher,
                 index,
             )
-            plan.print("Successfully launched full-beaconchain-explorer")
+            plan.print("Successfully launched explorer")
         elif additional_service == "prometheus_grafana":
             # Allow prometheus to be launched last so is able to collect metrics from other services
             launch_prometheus_grafana = True
